@@ -26,4 +26,20 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<Object>(errors, HttpStatus.BAD_REQUEST) ;
     }
 
+
+    @ExceptionHandler(GenericException.class)
+    public ResponseEntity<Object> genericException(GenericException ex){
+        Map<String, String> errors = new HashMap<>();
+        errors.put("status",String.valueOf(ex.getStatusCode()));
+        errors.put("errorResponse",ex.getErrorMessage());
+        return new ResponseEntity<Object>(errors, HttpStatus.BAD_REQUEST) ;
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<Object> NotFoundException(NotFoundException ex) {
+        String message = ex.getMessage();
+        return new ResponseEntity<Object>(message, HttpStatus.BAD_REQUEST);
+    }
+
+
 }
