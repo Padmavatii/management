@@ -14,7 +14,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 @Service
 public class AvailabilityServiceImpl implements availabilityInterface {
@@ -84,6 +86,23 @@ public class AvailabilityServiceImpl implements availabilityInterface {
 
         return response;
 
+    }
+
+    @Override
+    public List<Availability> getAvailability() {
+        logger.info("API call to get all the availability of doctors");
+        return availabilityRepository.findAll();
+    }
+
+    @Override
+    public Optional<Availability> getAvailabilityById(Long availabilityId) {
+        logger.info("API call to get a doctor by their ID{}",availabilityId );
+        Optional<Availability> availability = availabilityRepository.findById(availabilityId);
+        if(availability.isEmpty()){
+            logger.error("Invalid Id passed{}",availabilityId);
+            throw new NotFoundException(messageSource.getMessage(DOCTOR_AVAILABILITY_NOT_FOUND, null, Locale.ENGLISH));
+        }
+        return availability;
     }
 
 

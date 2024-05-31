@@ -2,6 +2,10 @@ package management.interfaces;
 
 import management.common.GenericResponse;
 import management.dto.AvailabilityDTO;
+import management.entity.Availability;
+
+import java.util.List;
+import java.util.Optional;
 
 public interface availabilityInterface {
 
@@ -20,4 +24,8 @@ public interface availabilityInterface {
      * @return
      */
     GenericResponse updateAvailability(Long id, AvailabilityDTO availabilityDTO);
+
+    public List<Availability> getAvailability();
+
+    Optional<Availability> getAvailabilityById(Long id);
 }
