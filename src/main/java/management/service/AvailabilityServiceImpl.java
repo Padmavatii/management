@@ -3,6 +3,7 @@ package management.service;
 import management.common.GenericResponse;
 import management.common.NotFoundException;
 import management.dto.AvailabilityDTO;
+import management.dto.DoctorDTO;
 import management.entity.Availability;
 import management.interfaces.availabilityInterface;
 import management.repository.AvailabilityRepository;
@@ -13,6 +14,8 @@ import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
 import java.util.Locale;
@@ -27,65 +30,82 @@ public class AvailabilityServiceImpl implements availabilityInterface {
 
     private final MessageSource messageSource;
 
+    private final WebClient webClient;
+
+    private final RestTemplate restTemplate;
+
     @Autowired
-    public AvailabilityServiceImpl(AvailabilityRepository availabilityRepository, MessageSource messageSource) {
+    public AvailabilityServiceImpl(AvailabilityRepository availabilityRepository, MessageSource messageSource, WebClient webClient, RestTemplate restTemplate){
         this.availabilityRepository = availabilityRepository;
         this.messageSource = messageSource;
+        this.webClient = webClient;
+        this.restTemplate = restTemplate;
     }
 
     private static final String DOCTOR_AVAILABILITY_SUBMIT_SUCCESS="Availability.submit.success";
     private static final String DOCTOR_AVAILABILITY_UPDATE_SUCCESS="Availability.update.success";
     private static final String DOCTOR_AVAILABILITY_NOT_FOUND="Availability.Not.Found";
+    private static final String DOCTOR_NOT_FOUND="Doctor.Not.Found.Error";
 
     @Transactional
     @Override
     public GenericResponse submitAvailability(AvailabilityDTO availabilityDTO) {
-        logger.info("API call to add availability of doctor{}",availabilityDTO);
+        try {
+            logger.info("API call to add availability of doctor{}", availabilityDTO);
 
-//        Long doctorId = availabilityDTO.getDoctorId();
-//        if(doctorId == null){
-//            throw new GenericException(HttpStatus.BAD_REQUEST.value(), HttpStatus.BAD_REQUEST.getReasonPhrase(), messageSource.getMessage(, null, Locale.ENGLISH))
-//        }
+                     webClient.get()
+                    .uri("http://localhost:8080/hms/doctor/{doctorId}", availabilityDTO.getDoctorId())
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
 
-        Availability availability = new Availability();
-        availability.setDoctorId(availabilityDTO.getDoctorId());
-        availability.setDoctorName(availabilityDTO.getDoctorName());
-        availability.setShiftTimingStartTime(availabilityDTO.getShiftTimingStartTime());
-        availability.setShiftTimingEndTime(availabilityDTO.getShiftTimingEndTime());
-        availability.setStatus(availabilityDTO.getStatus());
+                Availability availability = new Availability();
+                availability.setDoctorId(availabilityDTO.getDoctorId());
+                availability.setDoctorName(availabilityDTO.getDoctorName());
+                availability.setShiftTimingStartTime(availabilityDTO.getShiftTimingStartTime());
+                availability.setShiftTimingEndTime(availabilityDTO.getShiftTimingEndTime());
+                availability.setStatus(availabilityDTO.getStatus());
+                availabilityRepository.save(availability);
 
-        availabilityRepository.save(availability);
+            GenericResponse response = new GenericResponse();
+            response.setStatus(HttpStatus.OK.value());
+            response.setResponseCode(DOCTOR_AVAILABILITY_SUBMIT_SUCCESS);
+            response.setResponseMessage(messageSource.getMessage(DOCTOR_AVAILABILITY_SUBMIT_SUCCESS, null, Locale.ENGLISH));
 
-        GenericResponse response = new GenericResponse();
-        response.setStatus(HttpStatus.OK.value());
-        response.setResponseCode(DOCTOR_AVAILABILITY_SUBMIT_SUCCESS);
-        response.setResponseMessage(messageSource.getMessage(DOCTOR_AVAILABILITY_SUBMIT_SUCCESS, null, Locale.ENGLISH));
-
-        return response;
+            return response;
+        }catch (Exception e) {
+            logger.error("Id Not Found{}", availabilityDTO.getDoctorId());
+            throw new NotFoundException(messageSource.getMessage(DOCTOR_NOT_FOUND, null, Locale.ENGLISH));
+        }
     }
 
     @Transactional
     @Override
     public GenericResponse updateAvailability(Long id, AvailabilityDTO availabilityDTO){
-        logger.info("API call to update availability of doctor{}", availabilityDTO);
-        Availability availability = availabilityRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(messageSource.getMessage(DOCTOR_AVAILABILITY_NOT_FOUND, null, Locale.ENGLISH)));
+        try {
+            logger.info("API call to update availability of doctor{}", availabilityDTO);
+            Availability availability = availabilityRepository.findById(id)
+                    .orElseThrow(() -> new NotFoundException(messageSource.getMessage(DOCTOR_AVAILABILITY_NOT_FOUND, null, Locale.ENGLISH)));
 
-        availability.setDoctorId(availabilityDTO.getDoctorId());
-        availability.setDoctorName(availabilityDTO.getDoctorName());
-        availability.setShiftTimingStartTime(availabilityDTO.getShiftTimingStartTime());
-        availability.setShiftTimingEndTime(availabilityDTO.getShiftTimingEndTime());
-        availability.setStatus(availabilityDTO.getStatus());
+            restTemplate.getForObject("http://localhost:8080/hms/doctor/{doctorId}", DoctorDTO.class, availabilityDTO.getDoctorId());
+            availability.setDoctorId(availabilityDTO.getDoctorId());
+            availability.setDoctorName(availabilityDTO.getDoctorName());
+            availability.setShiftTimingStartTime(availabilityDTO.getShiftTimingStartTime());
+            availability.setShiftTimingEndTime(availabilityDTO.getShiftTimingEndTime());
+            availability.setStatus(availabilityDTO.getStatus());
 
-        availabilityRepository.save(availability);
+            availabilityRepository.save(availability);
 
-        GenericResponse response = new GenericResponse();
-        response.setStatus(HttpStatus.OK.value());
-        response.setResponseCode(DOCTOR_AVAILABILITY_UPDATE_SUCCESS);
-        response.setResponseMessage(messageSource.getMessage(DOCTOR_AVAILABILITY_UPDATE_SUCCESS, null, Locale.ENGLISH));
+            GenericResponse response = new GenericResponse();
+            response.setStatus(HttpStatus.OK.value());
+            response.setResponseCode(DOCTOR_AVAILABILITY_UPDATE_SUCCESS);
+            response.setResponseMessage(messageSource.getMessage(DOCTOR_AVAILABILITY_UPDATE_SUCCESS, null, Locale.ENGLISH));
 
-        return response;
-
+            return response;
+        }catch(Exception e) {
+            logger.error("Doctor Id Not Found{}", availabilityDTO.getDoctorId());
+            throw new NotFoundException(messageSource.getMessage(DOCTOR_NOT_FOUND, null, Locale.ENGLISH));
+        }
     }
 
     @Override
@@ -104,6 +124,4 @@ public class AvailabilityServiceImpl implements availabilityInterface {
         }
         return availability;
     }
-
-
 }

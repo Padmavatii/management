@@ -32,12 +32,12 @@ public class AvailabilityController {
         return iAvailabilityService.updateAvailability(id, availabilityDTO);
     }
 
-    @GetMapping("/availability/get")
+    @GetMapping("/doctor/availability")
     public List<Availability> getAvailability(){
         return iAvailabilityService.getAvailability();
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/doctor/availability/{id}")
     public Optional<Availability> getAvailabilityById(@PathVariable Long id){
         return iAvailabilityService.getAvailabilityById(id);
     }
