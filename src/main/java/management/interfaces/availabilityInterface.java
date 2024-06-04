@@ -4,7 +4,6 @@ import management.common.GenericResponse;
 import management.dto.AvailabilityDTO;
 import management.entity.Availability;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface availabilityInterface {
@@ -25,7 +24,16 @@ public interface availabilityInterface {
      */
     GenericResponse updateAvailability(Long id, AvailabilityDTO availabilityDTO);
 
+    /**
+     *
+     * @return list of doctor availability
+     */
     public Availability getAvailability();
 
+    /**
+     *
+     * @param id
+     * @return
+     */
     Optional<Availability> getAvailabilityById(Long id);
 }
