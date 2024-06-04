@@ -25,7 +25,7 @@ public interface availabilityInterface {
      */
     GenericResponse updateAvailability(Long id, AvailabilityDTO availabilityDTO);
 
-    public List<Availability> getAvailability();
+    public Availability getAvailability();
 
     Optional<Availability> getAvailabilityById(Long id);
 }

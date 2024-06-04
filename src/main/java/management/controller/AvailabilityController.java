@@ -33,7 +33,7 @@ public class AvailabilityController {
     }
 
     @GetMapping("/doctor/availability")
-    public List<Availability> getAvailability(){
+    public Availability getAvailability(){
         return iAvailabilityService.getAvailability();
     }
 

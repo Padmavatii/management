@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -54,25 +53,26 @@ public class AvailabilityServiceImpl implements availabilityInterface {
             logger.info("API call to add availability of doctor{}", availabilityDTO);
 
                      webClient.get()
-                    .uri("http://localhost:8080/hms/doctor/{doctorId}", availabilityDTO.getDoctorId())
+                    .uri("http://localhost:9091/hms/doctor/{doctorId}", availabilityDTO.getDoctorId())
                     .retrieve()
                     .bodyToMono(String.class)
                     .block();
 
-                Availability availability = new Availability();
-                availability.setDoctorId(availabilityDTO.getDoctorId());
-                availability.setDoctorName(availabilityDTO.getDoctorName());
-                availability.setShiftTimingStartTime(availabilityDTO.getShiftTimingStartTime());
-                availability.setShiftTimingEndTime(availabilityDTO.getShiftTimingEndTime());
-                availability.setStatus(availabilityDTO.getStatus());
-                availabilityRepository.save(availability);
+                    Availability availability = new Availability();
+                    availability.setDoctorId(availabilityDTO.getDoctorId());
+                    availability.setDoctorName(availabilityDTO.getDoctorName());
+                    availability.setShiftTimingStartTime(availabilityDTO.getShiftTimingStartTime());
+                    availability.setShiftTimingEndTime(availabilityDTO.getShiftTimingEndTime());
+                    availability.setStatus(availabilityDTO.getStatus());
+                    availabilityRepository.save(availability);
 
-            GenericResponse response = new GenericResponse();
-            response.setStatus(HttpStatus.OK.value());
-            response.setResponseCode(DOCTOR_AVAILABILITY_SUBMIT_SUCCESS);
-            response.setResponseMessage(messageSource.getMessage(DOCTOR_AVAILABILITY_SUBMIT_SUCCESS, null, Locale.ENGLISH));
+                    GenericResponse response = new GenericResponse();
+                    response.setStatus(HttpStatus.OK.value());
+                    response.setResponseCode(DOCTOR_AVAILABILITY_SUBMIT_SUCCESS);
+                    response.setResponseMessage(messageSource.getMessage(DOCTOR_AVAILABILITY_SUBMIT_SUCCESS, null, Locale.ENGLISH));
 
-            return response;
+                    return response;
+
         }catch (Exception e) {
             logger.error("Id Not Found{}", availabilityDTO.getDoctorId());
             throw new NotFoundException(messageSource.getMessage(DOCTOR_NOT_FOUND, null, Locale.ENGLISH));
@@ -87,7 +87,7 @@ public class AvailabilityServiceImpl implements availabilityInterface {
             Availability availability = availabilityRepository.findById(id)
                     .orElseThrow(() -> new NotFoundException(messageSource.getMessage(DOCTOR_AVAILABILITY_NOT_FOUND, null, Locale.ENGLISH)));
 
-            restTemplate.getForObject("http://localhost:8080/hms/doctor/{doctorId}", DoctorDTO.class, availabilityDTO.getDoctorId());
+            restTemplate.getForObject("http://localhost:9091/hms/doctor/{doctorId}", DoctorDTO.class, availabilityDTO.getDoctorId());
             availability.setDoctorId(availabilityDTO.getDoctorId());
             availability.setDoctorName(availabilityDTO.getDoctorName());
             availability.setShiftTimingStartTime(availabilityDTO.getShiftTimingStartTime());
@@ -109,9 +109,13 @@ public class AvailabilityServiceImpl implements availabilityInterface {
     }
 
     @Override
-    public List<Availability> getAvailability() {
+    public Availability getAvailability() {
         logger.info("API call to get all the availability of doctors");
-        return availabilityRepository.findAll();
+        return webClient.get()
+                .uri("http://localhost:9999/hms/doctor/availability")
+                .retrieve()
+                .bodyToMono(Availability.class)
+                .block();
     }
 
     @Override
